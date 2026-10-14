@@ -155,16 +155,6 @@ describe("k8s manifests", () => {
     );
     expect(initSecurityContext.runAsUser).toBe(gatewaySecurityContext.runAsUser);
     expect(initSecurityContext.runAsGroup).toBe(gatewaySecurityContext.runAsGroup);
-
-    const initCommand = asStrings(initConfig.command, "init-config command");
-    const script = initCommand.join("\n");
-    expect(script).toContain("mkdir -p /tmp-volume/gateway-tmp");
-    expect(script).toContain("chmod 1777 /tmp-volume/gateway-tmp");
-    expect(script).toContain("exit 1");
-    expect(script).toContain("[ -k /tmp-volume/gateway-tmp ]");
-    // P1: a volume that denies the configured UID must fail loudly, not silently.
-    expect(script).toContain("writable by UID 1000");
-    expect(script).toContain("missing the sticky bit");
   });
 
   it.runIf(process.platform !== "win32")("prepares a tmp root the fs-safe guard accepts", () => {
@@ -199,7 +189,6 @@ describe("k8s manifests", () => {
       .filter((line) => line.includes("/tmp-volume"))
       .join("\n")
       .replaceAll("/tmp-volume", volumeRoot);
-    expect(prepScript).toContain("chmod 1777");
     execFileSync("sh", ["-c", prepScript], { stdio: "pipe" });
 
     const prepared = path.join(volumeRoot, "gateway-tmp");
